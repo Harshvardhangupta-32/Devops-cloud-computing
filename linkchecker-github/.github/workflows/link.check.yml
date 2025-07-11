@@ -1,32 +1,37 @@
-name: Check for broken links
+name: 🔗 Broken Link Checker
 
 on:
   push:
     branches:
-      - main    # change if your default branch is different
+      - main
   schedule:
-    - cron: '0 0 * * *'  # every day at midnight UTC
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:
 
 jobs:
-  linkChecker:
+  check-links:
+    name: Check for broken links using lychee
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: ⬇️ Checkout Repository
+        uses: actions/checkout@v3
 
-      - name: Install lychee
-        uses: lycheeverse/lychee-action@v1.9.2
-        with:
-          args: --verbose ./  # check all files in the repo
+      - name: 📥 Install lychee (link checker)
+        run: |
+          curl -LsSf https://github.com/lycheeverse/lychee/releases/latest/download/lychee-x86_64-unknown-linux-gnu.tar.gz | tar xz
+          sudo mv lychee /usr/local/bin
 
-      # Optional: fail the build if broken links are found
-      # - name: Run lychee and fail on errors
-      #   run: lychee --verbose --fail ./ 
+      - name: 🔍 Run lychee on all files
+        run: |
+          lychee --verbose --no-progress './**/*.md' './**/*.html' > lychee-report.txt || true
+          cat lychee-report.txt
 
-      # Optional: upload full report as artifact
-      - name: Save report as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: lychee-report
-          path: lychee/out.md
+      - name: 🚨 Fail on broken links
+        run: |
+          if grep -q "✗" lychee-report.txt; then
+            echo "Broken links found! ❌"
+            exit 1
+          else
+            echo "No broken links found! ✅"
+          fi
