@@ -1,0 +1,32 @@
+name: Check for broken links
+
+on:
+  push:
+    branches:
+      - main    # change if your default branch is different
+  schedule:
+    - cron: '0 0 * * *'  # every day at midnight UTC
+
+jobs:
+  linkChecker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install lychee
+        uses: lycheeverse/lychee-action@v1.9.2
+        with:
+          args: --verbose ./  # check all files in the repo
+
+      # Optional: fail the build if broken links are found
+      # - name: Run lychee and fail on errors
+      #   run: lychee --verbose --fail ./ 
+
+      # Optional: upload full report as artifact
+      - name: Save report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lychee-report
+          path: lychee/out.md
